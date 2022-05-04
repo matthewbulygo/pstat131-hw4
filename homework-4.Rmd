@@ -175,6 +175,13 @@ predict(log_fitted, new_data = titanic_test, type = "class") %>%
   bind_cols(titanic_test %>% dplyr::select(survived)) %>% 
   accuracy(truth = survived, estimate = .pred_class)
 ```
+```{r}
+augment(log_fitted, new_data = titanic_test) %>%
+  roc_curve(survived, .pred_Yes) %>%
+  autoplot()
+```
+
+Our model did well and the testing accuracy increased.
 
 ## Required for 231 Students
 
