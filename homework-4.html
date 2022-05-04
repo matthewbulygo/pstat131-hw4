@@ -1628,10 +1628,10 @@ recipe you used in Homework 3.</p>
 <pre class="r"><code>library(tidyverse)
 library(tidymodels)
 library(readr)
+tidymodels_prefer()
 set.seed(7)
 
 titanic &lt;- read_csv(&quot;data/titanic.csv&quot;)
-titanic_data &lt;- data.frame(titanic)
 titanic$pclass &lt;- factor(titanic$pclass)
 titanic$survived &lt;- factor(titanic$survived, levels=c(&quot;Yes&quot;, &quot;No&quot;))
 titanic</code></pre>
@@ -1655,7 +1655,7 @@ titanic</code></pre>
 <code>survived.</code> You should choose the proportions to split the
 data into. Verify that the training and testing data sets have the
 appropriate number of observations.</p>
-<pre class="r"><code>titanic_split &lt;- titanic_data %&gt;% 
+<pre class="r"><code>titanic_split &lt;- titanic %&gt;% 
   initial_split(strata = survived, prop = 0.7)
 
 titanic_train &lt;- training(titanic_split)
@@ -1665,16 +1665,35 @@ dim(titanic_train)</code></pre>
 <pre><code>## [1] 623  12</code></pre>
 <pre class="r"><code>dim(titanic_test)</code></pre>
 <pre><code>## [1] 268  12</code></pre>
-<pre class="r"><code>titanic_recipe &lt;- recipe(survived ~ pclass + sex + age + 
-                           sib_sp + parch + fare, titanic_train) %&gt;% 
-  step_impute_linear(age, impute_with = imp_vars(sib_sp)) %&gt;% 
-  step_dummy(all_nominal_predictors()) %&gt;% 
-  step_interact(~ starts_with(&quot;sex&quot;):age + age:fare)</code></pre>
+<pre class="r"><code>max(titanic$passenger_id)</code></pre>
+<pre><code>## [1] 891</code></pre>
+<pre class="r"><code>0.7*max(titanic$passenger_id)</code></pre>
+<pre><code>## [1] 623.7</code></pre>
+<pre class="r"><code>0.3*max(titanic$passenger_id)</code></pre>
+<pre><code>## [1] 267.3</code></pre>
+<p>The training and test data sets have the appropriate number of
+observations.</p>
 </div>
 <div id="question-2" class="section level3">
 <h3>Question 2</h3>
 <p>Fold the <strong>training</strong> data. Use <em>k</em>-fold
 cross-validation, with <span class="math inline">\(k = 10\)</span>.</p>
+<pre class="r"><code>titanic_folds &lt;- vfold_cv(titanic_train, v = 10)
+titanic_folds</code></pre>
+<pre><code>## #  10-fold cross-validation 
+## # A tibble: 10 x 2
+##    splits           id    
+##    &lt;list&gt;           &lt;chr&gt; 
+##  1 &lt;split [560/63]&gt; Fold01
+##  2 &lt;split [560/63]&gt; Fold02
+##  3 &lt;split [560/63]&gt; Fold03
+##  4 &lt;split [561/62]&gt; Fold04
+##  5 &lt;split [561/62]&gt; Fold05
+##  6 &lt;split [561/62]&gt; Fold06
+##  7 &lt;split [561/62]&gt; Fold07
+##  8 &lt;split [561/62]&gt; Fold08
+##  9 &lt;split [561/62]&gt; Fold09
+## 10 &lt;split [561/62]&gt; Fold10</code></pre>
 </div>
 <div id="question-3" class="section level3">
 <h3>Question 3</h3>
@@ -1683,6 +1702,9 @@ cross-validation, with <span class="math inline">\(k = 10\)</span>.</p>
 simply fitting and testing models on the entire training set? If we
 <strong>did</strong> use the entire training set, what resampling method
 would that be?</p>
+<p>In question 2 we randomly divide the training set into 10 groups of
+roughly equal size. This allows us to measure model performance without
+predicting on the training set directly as a whole.</p>
 </div>
 <div id="question-4" class="section level3">
 <h3>Question 4</h3>
@@ -1697,6 +1719,40 @@ engine.</li>
 <p>How many models, total, across all folds, will you be fitting to the
 data? To answer, think about how many folds there are, and how many
 models you’ll fit to each fold.</p>
+<pre class="r"><code># Recipe
+titanic_recipe &lt;- recipe(survived ~ pclass + sex + age + 
+                           sib_sp + parch + fare, titanic_train) %&gt;% 
+  step_impute_linear(age, impute_with = imp_vars(sib_sp)) %&gt;% 
+  step_dummy(all_nominal_predictors()) %&gt;% 
+  step_interact(~ starts_with(&quot;sex&quot;):age + age:fare)
+
+# Logistic regression
+log_reg &lt;- logistic_reg() %&gt;% 
+  set_engine(&quot;glm&quot;) %&gt;% 
+  set_mode(&quot;classification&quot;)
+
+log_wkflow &lt;- workflow() %&gt;% 
+  add_model(log_reg) %&gt;% 
+  add_recipe(titanic_recipe)
+
+# LDA
+lda_mod &lt;- discrim_linear() %&gt;% 
+  set_mode(&quot;classification&quot;) %&gt;% 
+  set_engine(&quot;MASS&quot;)
+
+lda_wkflow &lt;- workflow() %&gt;% 
+  add_model(lda_mod) %&gt;% 
+  add_recipe(titanic_recipe)
+
+# QDA
+qda_mod &lt;- discrim_quad() %&gt;% 
+  set_mode(&quot;classification&quot;) %&gt;% 
+  set_engine(&quot;MASS&quot;)
+
+qda_wkflow &lt;- workflow() %&gt;% 
+  add_model(qda_mod) %&gt;% 
+  add_recipe(titanic_recipe)</code></pre>
+<p>We’ll be fitting 30 models to the data.</p>
 </div>
 <div id="question-5" class="section level3">
 <h3>Question 5</h3>
@@ -1707,6 +1763,7 @@ time you knit. Instead, run them once, using an R script, and store your
 results; look into the use of <a href="https://www.r-bloggers.com/2017/04/load-save-and-rda-files/">loading
 and saving</a>. You should still include the code to run them when you
 knit, but set <code>eval = FALSE</code> in the code chunks.</em></p>
+<pre class="r"><code>log_fit &lt;- fit_resamples(log_wkflow, titanic_folds)</code></pre>
 </div>
 <div id="question-6" class="section level3">
 <h3>Question 6</h3>
