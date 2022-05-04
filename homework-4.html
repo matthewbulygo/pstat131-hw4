@@ -1776,7 +1776,7 @@ qda_fit &lt;- fit_resamples(qda_wkflow, titanic_folds)</code></pre>
 <h3>Question 6</h3>
 <p>Use <code>collect_metrics()</code> to print the mean and standard
 errors of the performance metric <em>accuracy</em> across all folds for
-each of the four models.</p>
+each of the three models.</p>
 <p>Decide which of the 3 fitted models has performed the best. Explain
 why. <em>(Note: You should consider both the mean accuracy and its
 standard error.)</em></p>
@@ -1798,11 +1798,14 @@ standard error.)</em></p>
 ##   &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
 ## 1 accuracy binary     0.791    10  0.0194 Preprocessor1_Model1
 ## 2 roc_auc  binary     0.844    10  0.0147 Preprocessor1_Model1</code></pre>
+<p>The logistic regression model performed the best because it had the
+highest mean accuracy even accounting for standard error.</p>
 </div>
 <div id="question-7" class="section level3">
 <h3>Question 7</h3>
 <p>Now that you’ve chosen a model, fit your chosen model to the entire
 training dataset (not to the folds).</p>
+<pre class="r"><code>log_fitted &lt;- fit(log_wkflow, titanic_train)</code></pre>
 </div>
 <div id="question-8" class="section level3">
 <h3>Question 8</h3>
@@ -1811,6 +1814,13 @@ training dataset (not to the folds).</p>
 model’s performance on the testing data!</p>
 <p>Compare your model’s testing accuracy to its average accuracy across
 folds. Describe what you see.</p>
+<pre class="r"><code>predict(log_fitted, new_data = titanic_test, type = &quot;class&quot;) %&gt;% 
+  bind_cols(titanic_test %&gt;% dplyr::select(survived)) %&gt;% 
+  accuracy(truth = survived, estimate = .pred_class)</code></pre>
+<pre><code>## # A tibble: 1 x 3
+##   .metric  .estimator .estimate
+##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt;
+## 1 accuracy binary         0.776</code></pre>
 </div>
 </div>
 <div id="required-for-231-students" class="section level2">
