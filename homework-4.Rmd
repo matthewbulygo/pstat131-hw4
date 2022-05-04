@@ -33,12 +33,14 @@ Create a recipe for this dataset **identical** to the recipe you used in Homewor
 library(tidyverse)
 library(tidymodels)
 library(readr)
+library(discrim)
 tidymodels_prefer()
 set.seed(7)
 
-titanic <- read_csv("data/titanic.csv")
-titanic$pclass <- factor(titanic$pclass)
-titanic$survived <- factor(titanic$survived, levels=c("Yes", "No"))
+titanic <- read_csv(file = "data/titanic.csv") %>% 
+  mutate(survived = factor(survived, 
+                           levels = c("Yes", "No")),
+         pclass = factor(pclass))
 titanic
 ```
 
@@ -89,10 +91,11 @@ Set up workflows for 3 models:
 How many models, total, across all folds, will you be fitting to the data? To answer, think about how many folds there are, and how many models you'll fit to each fold.
 
 ```{r}
-# Recipe
+#Recipe
 titanic_recipe <- recipe(survived ~ pclass + sex + age + 
                            sib_sp + parch + fare, titanic_train) %>% 
   step_impute_linear(age, impute_with = imp_vars(sib_sp)) %>% 
+  # choice of predictors to impute with is up to you
   step_dummy(all_nominal_predictors()) %>% 
   step_interact(~ starts_with("sex"):age + age:fare)
 
@@ -144,6 +147,12 @@ qda_fit <- fit_resamples(qda_wkflow, titanic_folds)
 Use `collect_metrics()` to print the mean and standard errors of the performance metric *accuracy* across all folds for each of the four models.
 
 Decide which of the 3 fitted models has performed the best. Explain why. *(Note: You should consider both the mean accuracy and its standard error.)*
+
+```{r}
+collect_metrics(log_fit)
+collect_metrics(lda_fit)
+collect_metrics(qda_fit)
+```
 
 ### Question 7
 

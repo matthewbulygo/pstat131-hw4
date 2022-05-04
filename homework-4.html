@@ -1628,12 +1628,14 @@ recipe you used in Homework 3.</p>
 <pre class="r"><code>library(tidyverse)
 library(tidymodels)
 library(readr)
+library(discrim)
 tidymodels_prefer()
 set.seed(7)
 
-titanic &lt;- read_csv(&quot;data/titanic.csv&quot;)
-titanic$pclass &lt;- factor(titanic$pclass)
-titanic$survived &lt;- factor(titanic$survived, levels=c(&quot;Yes&quot;, &quot;No&quot;))
+titanic &lt;- read_csv(file = &quot;data/titanic.csv&quot;) %&gt;% 
+  mutate(survived = factor(survived, 
+                           levels = c(&quot;Yes&quot;, &quot;No&quot;)),
+         pclass = factor(pclass))
 titanic</code></pre>
 <pre><code>## # A tibble: 891 x 12
 ##    passenger_id survived pclass name       sex     age sib_sp parch ticket  fare
@@ -1719,10 +1721,11 @@ engine.</li>
 <p>How many models, total, across all folds, will you be fitting to the
 data? To answer, think about how many folds there are, and how many
 models you’ll fit to each fold.</p>
-<pre class="r"><code># Recipe
+<pre class="r"><code>#Recipe
 titanic_recipe &lt;- recipe(survived ~ pclass + sex + age + 
                            sib_sp + parch + fare, titanic_train) %&gt;% 
   step_impute_linear(age, impute_with = imp_vars(sib_sp)) %&gt;% 
+  # choice of predictors to impute with is up to you
   step_dummy(all_nominal_predictors()) %&gt;% 
   step_interact(~ starts_with(&quot;sex&quot;):age + age:fare)
 
@@ -1763,7 +1766,11 @@ time you knit. Instead, run them once, using an R script, and store your
 results; look into the use of <a href="https://www.r-bloggers.com/2017/04/load-save-and-rda-files/">loading
 and saving</a>. You should still include the code to run them when you
 knit, but set <code>eval = FALSE</code> in the code chunks.</em></p>
-<pre class="r"><code>log_fit &lt;- fit_resamples(log_wkflow, titanic_folds)</code></pre>
+<pre class="r"><code>log_fit &lt;- fit_resamples(log_wkflow, titanic_folds)
+
+lda_fit &lt;- fit_resamples(lda_wkflow, titanic_folds)
+
+qda_fit &lt;- fit_resamples(qda_wkflow, titanic_folds)</code></pre>
 </div>
 <div id="question-6" class="section level3">
 <h3>Question 6</h3>
@@ -1773,6 +1780,24 @@ each of the four models.</p>
 <p>Decide which of the 3 fitted models has performed the best. Explain
 why. <em>(Note: You should consider both the mean accuracy and its
 standard error.)</em></p>
+<pre class="r"><code>collect_metrics(log_fit)</code></pre>
+<pre><code>## # A tibble: 2 x 6
+##   .metric  .estimator  mean     n std_err .config             
+##   &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy binary     0.811    10  0.0181 Preprocessor1_Model1
+## 2 roc_auc  binary     0.864    10  0.0135 Preprocessor1_Model1</code></pre>
+<pre class="r"><code>collect_metrics(lda_fit)</code></pre>
+<pre><code>## # A tibble: 2 x 6
+##   .metric  .estimator  mean     n std_err .config             
+##   &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy binary     0.796    10  0.0194 Preprocessor1_Model1
+## 2 roc_auc  binary     0.861    10  0.0128 Preprocessor1_Model1</code></pre>
+<pre class="r"><code>collect_metrics(qda_fit)</code></pre>
+<pre><code>## # A tibble: 2 x 6
+##   .metric  .estimator  mean     n std_err .config             
+##   &lt;chr&gt;    &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;               
+## 1 accuracy binary     0.791    10  0.0194 Preprocessor1_Model1
+## 2 roc_auc  binary     0.844    10  0.0147 Preprocessor1_Model1</code></pre>
 </div>
 <div id="question-7" class="section level3">
 <h3>Question 7</h3>
