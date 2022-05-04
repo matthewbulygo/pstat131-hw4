@@ -77,7 +77,7 @@ titanic_folds
 
 In your own words, explain what we are doing in Question 2. What is *k*-fold cross-validation? Why should we use it, rather than simply fitting and testing models on the entire training set? If we **did** use the entire training set, what resampling method would that be?
 
-In question 2 we randomly divide the training set into 10 groups of roughly equal size. This allows us to measure model performance without predicting on the training set directly as a whole. 
+In question 2 we randomly divide the training set into 10 groups of roughly equal size. This allows us to measure model performance without predicting on the training set directly as a whole. If we used the entire training set we would be using bootstrapping. 
 
 
 ### Question 4
@@ -95,7 +95,6 @@ How many models, total, across all folds, will you be fitting to the data? To an
 titanic_recipe <- recipe(survived ~ pclass + sex + age + 
                            sib_sp + parch + fare, titanic_train) %>% 
   step_impute_linear(age, impute_with = imp_vars(sib_sp)) %>% 
-  # choice of predictors to impute with is up to you
   step_dummy(all_nominal_predictors()) %>% 
   step_interact(~ starts_with("sex"):age + age:fare)
 
@@ -181,7 +180,7 @@ augment(log_fitted, new_data = titanic_test) %>%
   autoplot()
 ```
 
-Our model did well and the testing accuracy increased.
+Our model did well since the area under curve (AUC) is large and the accuracy increased on the testing data. 
 
 ## Required for 231 Students
 
